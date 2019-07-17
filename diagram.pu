@@ -1,0 +1,37 @@
+@startuml
+
+class Snapshot{
++ name
++ used
++ avail
++ refer
++ mountpoint
++ date
+}
+
+class File {
++ name
++ date_modified
++ crc
+}
+
+class Scan {
++ date
++ files[]
++ filesystem
+}
+
+class SnapshotDiff {
++ old_snapshot
++ new_snapshot
++ files_added[]
++ files_modified[]
++ files_deleted[]
+}
+
+Scan::filesystem --> Snapshot::name
+File::name --> Scan::files
+Snapshot::name --> SnapshotDiff::old_snapshot
+Snapshot::name --> SnapshotDiff::new_snapshot
+File::name --> SnapshotDiff::files_added
+@enduml
