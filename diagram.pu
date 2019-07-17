@@ -13,12 +13,14 @@ class File {
 + name
 + date_modified
 + crc
++ calculate_crc()
 }
 
 class Scan {
 + date
 + files[]
 + filesystem
++ host
 }
 
 class SnapshotDiff {
@@ -29,9 +31,15 @@ class SnapshotDiff {
 + files_deleted[]
 }
 
+class Host {
++ name
++ ip
+}
+
 Scan::filesystem --> Snapshot::name
 File::name --> Scan::files
 Snapshot::name --> SnapshotDiff::old_snapshot
 Snapshot::name --> SnapshotDiff::new_snapshot
 File::name --> SnapshotDiff::files_added
+Scan::host --> Host::name
 @enduml

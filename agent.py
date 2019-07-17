@@ -1,8 +1,10 @@
 """
 ZFS Backup Consistency Agent
 """
+import os
 import subprocess
 import hashlib
+
 
 class Snapshot():
     """
@@ -47,29 +49,33 @@ class File():
     def __str__(self):
         return f"{self.name}"
 
-    def calculate_crc(buffer_size=4096):
+    def calculate_crc(self, buffer_size=4096):
         md5sum = hashlib.md5()
         with open(self.name, "rb") as f:
             for chunk in iter(lambda: f.read(buffer_size), b""):
                 md5sum.update(chunk)
         self.crc = md5sum.hexdigest()
 
-    def _get_date_modified():
+    def _get_date_modified(self):
         self.date_modified = os.path.getmtime(self.name)
 
 
 def get_filesystems():
+    filesystems = set()
     cmd = ['zfs', 'list', '-H']
     res = subprocess.check_output(cmd)
     for line in res.split(b'\n'):
-        print(parse_snapshot(line))
+        filesystems.add(parse_snapshot(line))
+    return filesystems
 
 
 def get_snapshots():
+    snapshots = set()
     cmd = ['zfs', 'list', '-t', 'snapshot', '-H']
     res = subprocess.check_output(cmd)
     for line in res.split(b'\n'):
-        print(parse_snapshot(line))
+        snapshots.add(parse_snapshot(line))
+    return snapshots
 
 
 def parse_snapshot(snapshot_line):
@@ -87,5 +93,8 @@ def parse_snapshot(snapshot_line):
     return snapshot
 
 
-get_snapshots()
-get_filesystems()
+def main():
+    snapshots = get_snapshots()
+    filesystems = get_filesystems()
+    print(snapshots)
+    print(filesystems)
