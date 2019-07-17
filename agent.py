@@ -2,7 +2,7 @@
 ZFS Backup Consistency Agent
 """
 import subprocess
-
+import hashlib
 
 class Snapshot():
     """
@@ -24,6 +24,38 @@ class Snapshot():
     def _extract_date(self):
         if b'@' in self.name:
             self.date = self.name.split(b'@')[1]
+
+
+class File():
+    """
+    File representation
+    """
+    def __init__(self, name, filesystem, date_modified=None, crc=None):
+        """
+        :param name: file path
+        :param: date_modified: modification date
+        :param: crc: calculated sum
+        :param: filesystem: filesystem or snapshot
+        """
+        self.name = name
+        self.date_modified = date_modified
+        self.crc = crc
+        self.filesystem = filesystem
+
+        self._get_date_modified()
+
+    def __str__(self):
+        return f"{self.name}"
+
+    def calculate_crc(buffer_size=4096):
+        md5sum = hashlib.md5()
+        with open(self.name, "rb") as f:
+            for chunk in iter(lambda: f.read(buffer_size), b""):
+                md5sum.update(chunk)
+        self.crc = md5sum.hexdigest()
+
+    def _get_date_modified():
+        self.date_modified = os.path.getmtime(self.name)
 
 
 def get_filesystems():
