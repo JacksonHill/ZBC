@@ -60,12 +60,29 @@ class File():
         self.date_modified = os.path.getmtime(self.name)
 
 
+class Scan():
+    """
+    Scan representation
+    """
+    def __init__(self, date, filesystem, files=None, host=None):
+        self.date = date
+        if not files:
+            self.files = list()
+        self.filesystem = filesystem
+        self.host = host
+
+    def add_file(self, file):
+        if file:
+            self.files.append(file)
+
 def get_filesystems():
     filesystems = set()
     cmd = ['zfs', 'list', '-H']
     res = subprocess.check_output(cmd)
     for line in res.split(b'\n'):
-        filesystems.add(parse_snapshot(line))
+        fs = parse_snapshot(line)
+        if fs:
+            filesystems.add(fs)
     return filesystems
 
 
@@ -74,7 +91,9 @@ def get_snapshots():
     cmd = ['zfs', 'list', '-t', 'snapshot', '-H']
     res = subprocess.check_output(cmd)
     for line in res.split(b'\n'):
-        snapshots.add(parse_snapshot(line))
+        snapshot = parse_snapshot(line)
+        if snapshot:
+            snapshots.add(snapshot)
     return snapshots
 
 
@@ -93,8 +112,21 @@ def parse_snapshot(snapshot_line):
     return snapshot
 
 
+def perform_scan(target_dir):
+    """
+    @param: target_dir
+    @return: Scan
+    """
+    for dirpath, dirnames, filenames in os.walk(target_dir):
+        print(dirpath, dirnames, filenames)
+    # iterate over directory recursively
+    # instantiate File
+    # calculate crc
+    # append to Scan
+    # return Scan
+
 def main():
-    snapshots = get_snapshots()
     filesystems = get_filesystems()
-    print(snapshots)
-    print(filesystems)
+    for fs in filesystems:
+        print(fs)
+main()
