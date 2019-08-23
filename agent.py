@@ -4,7 +4,8 @@ ZFS Backup Consistency Agent
 import os
 import subprocess
 import hashlib
-
+import socket
+from datetime import datetime
 
 class Snapshot():
     """
@@ -64,12 +65,22 @@ class Scan():
     """
     Scan representation
     """
-    def __init__(self, date, filesystem, files=None, host=None):
-        self.date = date
+    def __init__(self, filesystem, date=None, files=None, host=None):
+        
+        if not date:
+            self.date = datetime.timestamp(datetime.now())
+        else:
+            self.date = date
+
         if not files:
             self.files = list()
+        
+        if not host:
+            self.host = socket.gethostname()
+        else:
+            self.host = host
+        
         self.filesystem = filesystem
-        self.host = host
 
     def add_file(self, file):
         if file:
@@ -114,19 +125,24 @@ def parse_snapshot(snapshot_line):
 
 def perform_scan(target_dir):
     """
-    @param: target_dir
+    @param: target_dir = Snapshot.mountpoint
     @return: Scan
     """
-    for dirpath, dirnames, filenames in os.walk(target_dir):
-        print(dirpath, dirnames, filenames)
-    # iterate over directory recursively
-    # instantiate File
-    # calculate crc
-    # append to Scan
-    # return Scan
+    scan = Scan(target_dir)
+    for dirpath, dirnames, filenames in os.walk(target_dir.decode("utf-8")):
+        if filenames:
+            for filename in filenames:
+                file_to_scan = File(name=f"{dirpath}/{filename}", filesystem=target_dir)
+                scan.add_file(file_to_scan)
+    for sf in scan.files:
+        sf.calculate_crc()
+    return scan
 
 def main():
     filesystems = get_filesystems()
     for fs in filesystems:
-        print(fs)
+        if fs.name == b"storage/test":
+            scan = perform_scan(fs.mountpoint)
+            for scanned_file in scan.files:
+                print(f"{scanned_file.name} {scanned_file.crc}")
 main()
