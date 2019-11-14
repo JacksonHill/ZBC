@@ -5,6 +5,7 @@ import os
 import subprocess
 import hashlib
 import socket
+import pickle
 from datetime import datetime
 
 class Snapshot():
@@ -80,11 +81,27 @@ class Scan():
         else:
             self.host = host
         
-        self.filesystem = filesystem
+        self.filesystem = filesystem.decode('utf-8')
 
     def add_file(self, file):
         if file:
             self.files.append(file)
+
+    def save_scan(self, filename=None):
+        if not filename:
+            filename = f"{self.filesystem.replace('/', '_')}@{self.date}.scan"
+
+        with open(filename, "wb") as fh:
+            pickle.dump(self, fh)
+
+    @staticmethod
+    def restore_scan(filename=None):
+        with open(filename, "rb") as fh:
+            try:
+                return pickle.load(fh)
+            except (EOFError, UnpicklingError):
+                return None
+
 
 def get_filesystems():
     filesystems = set()
@@ -141,8 +158,11 @@ def perform_scan(target_dir):
 def main():
     filesystems = get_filesystems()
     for fs in filesystems:
-        if fs.name == b"storage/test":
+        print (fs.name)
+        if fs.name == b"storage/logs" or fs.name == b'storage/':
             scan = perform_scan(fs.mountpoint)
             for scanned_file in scan.files:
-                print(f"{scanned_file.name} {scanned_file.crc}")
+                print(f"{scan.filesystem} {scanned_file.name} {scanned_file.crc}")
+            scan.save_scan()
+
 main()
